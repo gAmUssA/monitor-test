@@ -41,28 +41,64 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     }
     
-    // Generate random color in hex format
+    // List of vibrant colors suitable for lightbulbs
+    const vibrantColors = [
+        '#FF0000', // Red
+        '#00FF00', // Lime Green
+        '#0000FF', // Blue
+        '#FFFF00', // Yellow
+        '#FF00FF', // Magenta
+        '#00FFFF', // Cyan
+        '#FF8000', // Orange
+        '#8000FF', // Purple
+        '#0080FF', // Azure
+        '#FF0080', // Rose
+        '#00FF80', // Spring Green
+        '#80FF00', // Chartreuse
+        '#FF5500', // Deep Orange
+        '#00CCFF', // Bright Sky Blue
+        '#FF00CC'  // Hot Pink
+    ];
+    
+    // Generate vibrant color
     function getRandomColor() {
-        return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+        const colorIndex = Math.floor(Math.random() * vibrantColors.length);
+        return vibrantColors[colorIndex];
     }
     
     // Generate a drastically different color from the previous one
     function getDrasticColor(prevColor) {
-        // Minimum distance threshold for colors to be considered "drastically different"
-        const MIN_DISTANCE = 200; // Empirical value, higher means more contrast
-        let attempts = 0;
-        let newColor;
+        // For lightbulbs we want maximum contrast
+        const MIN_DISTANCE = 250; // Higher threshold for more contrast
         
-        do {
-            newColor = getRandomColor();
-            attempts++;
-            
-            // Prevent infinite loop - after many attempts, accept best candidate
-            if (attempts > 20) break;
-            
-        } while (colorDistance(prevColor, newColor) < MIN_DISTANCE);
+        // If no previous color, just return a random vibrant color
+        if (!prevColor) {
+            return getRandomColor();
+        }
         
-        return newColor;
+        // Find the most contrasting color to the previous one
+        let bestColor = null;
+        let maxDistance = 0;
+        
+        // Try each vibrant color and select the one with maximum contrast
+        vibrantColors.forEach(color => {
+            if (color === prevColor) return; // Skip the same color
+            
+            const distance = colorDistance(prevColor, color);
+            if (distance > maxDistance) {
+                maxDistance = distance;
+                bestColor = color;
+            }
+        });
+        
+        // If we didn't find a good contrast, fallback to random
+        if (maxDistance < MIN_DISTANCE && vibrantColors.length > 1) {
+            // Filter out the previous color and pick randomly from others
+            const filteredColors = vibrantColors.filter(color => color !== prevColor);
+            return filteredColors[Math.floor(Math.random() * filteredColors.length)];
+        }
+        
+        return bestColor || getRandomColor();
     }
     
     // Generate random gradient with colors drastically different from previous ones
