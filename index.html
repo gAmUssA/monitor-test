@@ -14,6 +14,18 @@
                 <button id="solid-btn" class="active">Solid Color</button>
                 <button id="gradient-btn">Gradient</button>
             </div>
+            <div class="auto-controls">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="auto-change">
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-label">Auto Change</span>
+                </label>
+                <div class="interval-control">
+                    <label for="interval">Interval: </label>
+                    <input type="range" id="interval" min="1" max="10" value="5" class="slider">
+                    <span id="interval-value">5s</span>
+                </div>
+            </div>
         </div>
     </div>
     <script src="script.js"></script>

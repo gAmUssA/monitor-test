@@ -3,10 +3,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const colorInfo = document.getElementById('color-info');
     const solidBtn = document.getElementById('solid-btn');
     const gradientBtn = document.getElementById('gradient-btn');
+    const autoChangeCheckbox = document.getElementById('auto-change');
+    const intervalSlider = document.getElementById('interval');
+    const intervalValue = document.getElementById('interval-value');
     
     let mode = 'solid'; // Default mode: solid color
     let lastColor = null; // Track the last solid color used
     let lastGradient = { color1: null, color2: null }; // Track the last gradient colors used
+    let autoChangeInterval = null; // Store the interval ID
+    let changeIntervalSeconds = 5; // Default interval in seconds
     
     // Convert hex to RGB object
     function hexToRgb(hex) {
@@ -121,4 +126,99 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize with a random color
     applySolidColor();
+    
+    // Parse URL parameters to apply settings
+    function getURLParams() {
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Check for auto change parameter
+        if (urlParams.has('auto')) {
+            autoChangeCheckbox.checked = urlParams.get('auto') === 'true';
+        }
+        
+        // Check for interval parameter
+        if (urlParams.has('interval')) {
+            const intervalParam = parseInt(urlParams.get('interval'));
+            if (!isNaN(intervalParam) && intervalParam >= 1 && intervalParam <= 10) {
+                changeIntervalSeconds = intervalParam;
+                intervalSlider.value = intervalParam;
+                intervalValue.textContent = `${intervalParam}s`;
+            }
+        }
+        
+        // Check for color mode parameter
+        if (urlParams.has('mode')) {
+            const modeParam = urlParams.get('mode');
+            if (modeParam === 'gradient') {
+                mode = 'gradient';
+                solidBtn.classList.remove('active');
+                gradientBtn.classList.add('active');
+                applyGradientColor();
+            }
+        }
+        
+        // Apply auto change if set to true
+        if (autoChangeCheckbox.checked) {
+            startAutoChange();
+        }
+    }
+    
+    // Update the URL with current settings
+    function updateURL() {
+        const urlParams = new URLSearchParams();
+        urlParams.set('auto', autoChangeCheckbox.checked);
+        urlParams.set('interval', changeIntervalSeconds);
+        urlParams.set('mode', mode);
+        
+        const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+        window.history.replaceState({}, '', newUrl);
+    }
+    
+    // Start auto color changes
+    function startAutoChange() {
+        if (autoChangeInterval) {
+            clearInterval(autoChangeInterval);
+        }
+        
+        autoChangeInterval = setInterval(() => {
+            if (mode === 'solid') {
+                applySolidColor();
+            } else {
+                applyGradientColor();
+            }
+        }, changeIntervalSeconds * 1000);
+    }
+    
+    // Stop auto color changes
+    function stopAutoChange() {
+        if (autoChangeInterval) {
+            clearInterval(autoChangeInterval);
+            autoChangeInterval = null;
+        }
+    }
+    
+    // Event listener for auto change checkbox
+    autoChangeCheckbox.addEventListener('change', () => {
+        if (autoChangeCheckbox.checked) {
+            startAutoChange();
+        } else {
+            stopAutoChange();
+        }
+        updateURL();
+    });
+    
+    // Event listener for interval slider
+    intervalSlider.addEventListener('input', () => {
+        changeIntervalSeconds = parseInt(intervalSlider.value);
+        intervalValue.textContent = `${changeIntervalSeconds}s`;
+        
+        if (autoChangeInterval) {
+            stopAutoChange();
+            startAutoChange();
+        }
+        updateURL();
+    });
+    
+    // Initialize URL parameters
+    getURLParams();
 });
