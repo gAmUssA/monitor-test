@@ -66,39 +66,69 @@ document.addEventListener('DOMContentLoaded', () => {
         return vibrantColors[colorIndex];
     }
     
+    // Keep track of the last few colors to avoid repetition
+    let recentColors = [];
+    const maxRecentColors = 5; // Don't repeat any of the last 5 colors
+    
     // Generate a drastically different color from the previous one
     function getDrasticColor(prevColor) {
-        // For lightbulbs we want maximum contrast
-        const MIN_DISTANCE = 250; // Higher threshold for more contrast
-        
         // If no previous color, just return a random vibrant color
         if (!prevColor) {
-            return getRandomColor();
+            const color = getRandomColor();
+            addToRecentColors(color);
+            return color;
         }
         
-        // Find the most contrasting color to the previous one
-        let bestColor = null;
-        let maxDistance = 0;
+        // Filter out recent colors to avoid repetition
+        const availableColors = vibrantColors.filter(color => 
+            !recentColors.includes(color) && color !== prevColor
+        );
         
-        // Try each vibrant color and select the one with maximum contrast
-        vibrantColors.forEach(color => {
-            if (color === prevColor) return; // Skip the same color
-            
-            const distance = colorDistance(prevColor, color);
-            if (distance > maxDistance) {
-                maxDistance = distance;
-                bestColor = color;
+        // If we've used up too many colors, reset and just avoid the previous color
+        const colorPool = availableColors.length > 0 ? 
+            availableColors : 
+            vibrantColors.filter(color => color !== prevColor);
+        
+        if (colorPool.length === 0) {
+            // Extreme fallback - just get a random color
+            const color = getRandomColor();
+            addToRecentColors(color);
+            return color;
+        }
+        
+        // Find colors with good contrast
+        const goodContrastColors = [];
+        const MIN_CONTRAST = 200;
+        
+        colorPool.forEach(color => {
+            const contrast = colorDistance(prevColor, color);
+            if (contrast > MIN_CONTRAST) {
+                // Add high contrast colors to our selection pool
+                // Weight higher contrast colors by adding them multiple times
+                const weight = Math.floor(contrast / 50); // Add once per 50 units of contrast
+                for (let i = 0; i < weight; i++) {
+                    goodContrastColors.push(color);
+                }
             }
         });
         
-        // If we didn't find a good contrast, fallback to random
-        if (maxDistance < MIN_DISTANCE && vibrantColors.length > 1) {
-            // Filter out the previous color and pick randomly from others
-            const filteredColors = vibrantColors.filter(color => color !== prevColor);
-            return filteredColors[Math.floor(Math.random() * filteredColors.length)];
-        }
+        // Pick a random color from our weighted list of good contrast colors
+        // Or fall back to the filtered color pool if none have good contrast
+        const selectionPool = goodContrastColors.length > 0 ? goodContrastColors : colorPool;
+        const selectedColor = selectionPool[Math.floor(Math.random() * selectionPool.length)];
         
-        return bestColor || getRandomColor();
+        // Remember this color to avoid repeating it too soon
+        addToRecentColors(selectedColor);
+        
+        return selectedColor;
+    }
+    
+    // Helper function to maintain our recent colors list
+    function addToRecentColors(color) {
+        recentColors.push(color);
+        if (recentColors.length > maxRecentColors) {
+            recentColors.shift(); // Remove oldest color
+        }
     }
     
     // Generate random gradient with colors drastically different from previous ones
